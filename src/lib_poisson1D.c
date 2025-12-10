@@ -25,6 +25,17 @@ void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
 void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *kv){
   // TODO: Fill AB with the identity matrix
   // Only the main diagonal should have 1, all other entries are 0
+  int n = *la;
+  int lab_v = *lab;
+  int ku = *kv;
+  if (ku <= 0) ku = 1;
+
+  int size = lab_v * n;
+  for (int i = 0; i < size; ++i) AB[i] = 0.0;
+
+  for (int j = 0; j < n; ++j) {
+    AB[ku + j*lab_v] = 1.0;
+  }
 }
 
 void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){
