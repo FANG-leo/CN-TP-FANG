@@ -52,6 +52,9 @@ void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){
 void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* BC0, double* BC1){
   // TODO: Compute the exact analytical solution at each grid point
   // This depends on the source term f(x) used in set_dense_RHS_DBC_1D
+  int n = *la;
+  double T0 = *BC0, T1 = *BC1;
+  for (int i = 0; i < n; ++i) EX_SOL[i] = T0 + X[i] * (T1 - T0);
 }  
 
 void set_grid_points_1D(double* x, int* la){
