@@ -59,6 +59,9 @@ void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* 
 
 void set_grid_points_1D(double* x, int* la){
   // TODO: Generate uniformly spaced grid points in [0,1]
+  int n = *la;
+  double h = 1.0 / (n + 1.0);
+  for (int i = 0; i < n; ++i) x[i] = (i + 1) * h;
 }
 
 double relative_forward_error(double* x, double* y, int* la){
