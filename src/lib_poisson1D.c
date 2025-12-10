@@ -7,6 +7,19 @@
 
 void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
   // TODO: Fill AB with the tridiagonal Poisson operator
+  int n = *la;
+  int lab_v = *lab;
+  int ku = *kv; if (ku <= 0) ku = 1;
+  double h = 1.0/(n+1.0);
+  double inv_h2 = 1.0/(h*h);
+  int size = lab_v * n;
+  for (int k = 0; k < size; ++k) AB[k] = 0.0;
+  for (int j = 0; j < n; ++j) {
+    int row_diag = ku + j - j; /* = ku */
+    AB[row_diag + j*lab_v] = 2.0 * inv_h2;
+    if (j+1 < n) AB[(ku + 1) + j*lab_v] = -1.0 * inv_h2;
+    if (j-1 >= 0) AB[(ku - 1) + j*lab_v] = -1.0 * inv_h2;
+  }
 }
 
 void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *kv){
