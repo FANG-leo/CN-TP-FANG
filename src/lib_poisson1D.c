@@ -66,15 +66,65 @@ void set_grid_points_1D(double* x, int* la){
 
 double relative_forward_error(double* x, double* y, int* la){
   // TODO: Compute the relative error using BLAS functions (dnrm2, daxpy or manual loop)
-  return 0.0;
+  int n = *la;
+  double num = 0.0, den = 0.0;
+  for (int i = 0; i < n; ++i){
+    double d = x[i] - y[i];
+    num += d*d;
+    den += y[i]*y[i];
+  }
+  if (den == 0.0) return (num==0.0) ? 0.0 : 1e300;
+  return sqrt(num)/sqrt(den);
 }
 
 int indexABCol(int i, int j, int *lab){
   // TODO: Return the correct index formula for column-major band storage
-  return 0;
+  int ku = 1; /* tri-diagonal case */
+  int lab_v = *lab;
+  int row = ku + i - j;
+  return row + j * lab_v;
 }
 
 int dgbtrftridiag(int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *ipiv, int *info){
   // TODO: Implement specialized LU factorization for tridiagonal matrices
+  int nn = *la;           /* actual matrix size */
+  (void)n;                /* keep signature but mark unused to avoid warnings */
+
+  int lab_v = *lab;
+  int ku_v = *ku;
+  if (ku_v <= 0) ku_v = 1;
+
+  /* initialize ipiv to identity (no pivoting) */
+  for (int i = 0; i < nn; ++i) ipiv[i] = i+1;
+
+  *info = 0;
+  double eps = 1e-18;
+
+  /* Thomas-like elimination stored in GB layout */
+  for (int j = 0; j < nn-1; ++j) {
+    /* pivot at A(j,j) */
+    int idx_pivot = ku_v + j * lab_v; /* row = ku, col = j */
+    double pivot = AB[idx_pivot];
+
+    if (fabs(pivot) <= eps) {
+      *info = j+1; /* Fortran-style positive index of failure */
+      return *info;
+    }
+
+    /* sub-diagonal A(j+1,j) stored at row = ku+1 in column j */
+    int idx_sub = (ku_v + 1) + j * lab_v;
+    double mult = AB[idx_sub] / pivot;
+    AB[idx_sub] = mult; /* store multiplier (L) */
+
+    /* upper element A(j,j+1) is in column j+1 at row = ku - 1 */
+    int idx_upper_in_nextcol = (ku_v - 1) + (j+1) * lab_v;
+    /* diagonal at next column */
+    int idx_diag_next = ku_v + (j+1) * lab_v;
+
+    /* update next diagonal */
+    AB[idx_diag_next] -= mult * AB[idx_upper_in_nextcol];
+  }
+
+  *info = 0;
   return *info;
 }
