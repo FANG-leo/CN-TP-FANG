@@ -5,6 +5,7 @@
 /* using direct methods (LU factorization)*/
 /******************************************/
 #include "lib_poisson1D.h"
+#include <time.h>
 
 #define TRF 0  /* Use LAPACK dgbtrf for LU factorization */
 #define TRI 1  /* Use custom tridiagonal LU factorization */
@@ -37,6 +38,10 @@ int main(int argc,char *argv[])
 
   double relres;                 /* Relative forward error */
 
+  struct timespec t_start, t_end;
+  double elapsed;
+
+
   if (argc == 2) {
     IMPLEM = atoi(argv[1]);
   } else if (argc > 2) {
@@ -46,7 +51,7 @@ int main(int argc,char *argv[])
 
   /* Problem setup */
   NRHS=1;           /* Solving Ax=b with one right-hand side */
-  nbpoints=10;      /* Total number of discretization points (including boundaries) */
+  nbpoints=1000;      /* Total number of discretization points (including boundaries) */
   la=nbpoints-2;    /* Number of interior points (excluding boundaries) */
   T0=-5.0;          /* Dirichlet boundary condition at x=0 */
   T1=5.0;           /* Dirichlet boundary condition at x=1 */
@@ -84,6 +89,16 @@ int main(int argc,char *argv[])
   ipiv = (int *) calloc(la, sizeof(int));  /* Pivot indices for LU factorization */
 
   /* LU Factorization using LAPACK's general band factorization */
+  /* DEBUG BEFORE FACTORIZATION */
+  printf("DEBUG BEFORE: la=%d kl=%d ku=%d lab=%d NRHS=%d\n", la, kl, ku, lab, NRHS);
+  for (int jj=0; jj < (la<6?la:6); ++jj){
+    printf("DEBUG BEFORE AB col %d:", jj);
+    for (int rr=0; rr < lab; ++rr) printf(" % .6e", AB[rr + jj*lab]);
+    printf("\n");
+  }
+
+  clock_gettime(CLOCK_MONOTONIC, &t_start);
+
   if (IMPLEM == TRF) {
     dgbtrf_(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
   }
@@ -93,6 +108,16 @@ int main(int argc,char *argv[])
     dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
   }
 
+
+  /* DEBUG AFTER FACTORIZATION (ipiv and LU stored in AB) */
+  printf("DEBUG AFTER: ipiv (first 10):");
+  for (int kk=0; kk < (la<10?la:10); ++kk) printf(" %d", ipiv[kk]);
+  printf("\n");
+  for (int jj=0; jj < (la<6?la:6); ++jj){
+    printf("DEBUG AFTER AB col %d:", jj);
+    for (int rr=0; rr < lab; ++rr) printf(" % .6e", AB[rr + jj*lab]);
+    printf("\n");
+  }
   /* Back-substitution to solve the system after factorization */
   if (IMPLEM == TRI || IMPLEM == TRF){
     /* Solution (Triangular) - solve using the LU factors */
@@ -107,7 +132,20 @@ int main(int argc,char *argv[])
   /* Alternative: solve directly using dgbsv */
   if (IMPLEM == SV) {
     // TODO : use dgbsv
+    printf("DEBUG: calling DGBSV with la=%d, kl=%d, ku=%d, lab=%d, NRHS=%d\n", la, kl, ku, lab, NRHS);
+    dgbsv_(&la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
+    if (info != 0) {
+      printf("\n INFO DGBSV (all-in-one solver) = %d\n", info);
+    }
   }
+
+  clock_gettime(CLOCK_MONOTONIC, &t_end);
+
+  elapsed = (t_end.tv_sec - t_start.tv_sec)
+        + 1e-9 * (t_end.tv_nsec - t_start.tv_nsec);
+
+  printf("Elapsed time = %e s\n", elapsed);
+
 
   /* Write results to files */
   write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");  /* LU factors */
