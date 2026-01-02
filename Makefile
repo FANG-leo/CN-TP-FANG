@@ -42,12 +42,14 @@ INCL= -I $(TPDIR)/include $(INCLATLAS)
 SOL?=
 OBJENV= tp_env.o
 OBJLIBPOISSON= lib_poisson1D$(SOL).o lib_poisson1D_writers.o lib_poisson1D_richardson$(SOL).o
+OBJLIBSPARSE= lib_poisson1D_sparse.o
+OBJTPSPARSE= $(OBJLIBPOISSON) $(OBJLIBSPARSE) tp_poisson1D_sparse_test.o
 OBJTP2ITER= $(OBJLIBPOISSON) tp_poisson1D_iter.o
 OBJTP2DIRECT= $(OBJLIBPOISSON) tp_poisson1D_direct.o
 #
 .PHONY: all
 
-all: bin/tp_testenv bin/tpPoisson1D_iter bin/tpPoisson1D_direct
+all: bin/tp_testenv bin/tpPoisson1D_iter bin/tpPoisson1D_direct bin/tp_poisson1D_sparse_test
 run: run_testenv run_tpPoisson1D_iter run_tpPoisson1D_direct
 
 testenv: bin/tp_testenv
@@ -68,6 +70,9 @@ bin/tpPoisson1D_iter: $(OBJTP2ITER)
 bin/tpPoisson1D_direct: $(OBJTP2DIRECT)
 	$(CC) -o bin/tpPoisson1D_direct $(OPTC) $(OBJTP2DIRECT) $(LIBS)
 
+bin/tp_poisson1D_sparse_test: $(OBJTPSPARSE)
+	$(CC) -o bin/tp_poisson1D_sparse_test $(OPTC) $(OBJTPSPARSE) $(LIBS)
+
 run_testenv:
 	bin/tp_testenv
 
@@ -80,6 +85,9 @@ run_tpPoisson1D_direct:
 	bin/tpPoisson1D_direct
 	bin/tpPoisson1D_direct 1
 	bin/tpPoisson1D_direct 2
+
+run_tp_poisson1D_sparse_test:
+	bin/tp_poisson1D_sparse_test
 
 clean:
 	rm *.o bin/*
