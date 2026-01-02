@@ -57,7 +57,7 @@ void set_grid_points_1D(double* x, int* la);
 /**
  * Compute the relative forward error between two vectors
  * @param x: Computed solution vector (size la)
- * @param y: Reference/exact solution vector (size la)
+ * @param y: Reference/exact solution vector (size la), can be modified
  * @param la: Vector size
  * @return Relative forward error ||x-y||/||x||
  */
